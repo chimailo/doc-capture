@@ -14,10 +14,25 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --clean",
     "typecheck": "tsc --noEmit",
-    "api": "api-extractor run --local"
+    "api": "api-extractor run --local",
+    "api:check": "api-extractor run"
+  },
+  "keywords": [
+    "ocr",
+    "plugin",
+    "types"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

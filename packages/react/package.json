@@ -20,7 +20,8 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --clean --sourcemap --external react",
     "typecheck": "tsc --noEmit",
-    "api": "api-extractor run --local"
+    "api": "api-extractor run --local",
+    "api:check": "api-extractor run"
   },
   "dependencies": {
     "@doc-capture/core": "workspace:*"
@@ -34,5 +35,19 @@
     "@types/react-dom": "^19.3.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
+  },
+  "keywords": [
+    "react",
+    "document",
+    "id",
+    "capture",
+    "kyc"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

@@ -1,0 +1,43 @@
+name: Nightly
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  soak-and-dataset:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/cache/restore@v4
+        with:
+          path: packages/opencv-build/dist
+          key: opencv-${{ hashFiles('packages/opencv-build/Dockerfile', 'packages/opencv-build/build-inside.sh', 'packages/opencv-build/opencv_js.config.py') }}
+          fail-on-cache-miss: true
+      - run: pnpm build && pnpm --filter @doc-capture/demo build
+      - run: pnpm --filter @doc-capture/bench exec playwright install --with-deps chromium
+      - run: pnpm --filter @doc-capture/bench fixtures
+      - name: 5000-frame memory soak
+        run: SOAK_FRAMES=5000 pnpm --filter @doc-capture/bench e2e soak
+      # The recorded dataset lives outside git (see apps/bench/README.md).
+      - name: Recorded dataset bench
+        if: ${{ vars.DATASET_URL != '' }}
+        run: |
+          mkdir -p /tmp/dataset
+          curl -fsSL "$DATASET_URL" | tar -xz -C /tmp/dataset
+          pnpm bench -- --dataset /tmp/dataset
+        env:
+          DATASET_URL: ${{ vars.DATASET_URL }}
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-report
+          path: apps/bench/reports

@@ -15,14 +15,16 @@
     "lint": "eslint .",
     "typecheck": "pnpm -r typecheck",
     "format": "prettier --write .",
-    "api": "pnpm -r --filter ./packages/** api",
+    "api": "pnpm -r --filter \"./packages/**\" --filter \"!@doc-capture/opencv-build\" api",
     "size": "size-limit",
     "bench": "pnpm --filter @doc-capture/bench bench",
-    "changeset": "changeset"
+    "changeset": "changeset",
+    "api:check": "pnpm -r --filter \"./packages/**\" --filter \"!@doc-capture/opencv-build\" api:check"
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.3",
     "@eslint/js": "^9.39.5",
+    "@microsoft/api-extractor": "^7.59.3",
     "@size-limit/preset-small-lib": "^14.1.0",
     "@types/node": "^22.20.5",
     "eslint": "^9.39.5",

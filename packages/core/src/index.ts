@@ -51,3 +51,5 @@ export type { CaptureMetrics } from './metrics';
 export { BUILT_IN_LOCALES, resolveMessages } from './guidance/messages';
 export type { GuidanceMessages } from './guidance/messages';
 export { coverTransform } from './overlay/overlay';
+export type { Clock } from './clock';
+export type { WorkerLike } from './worker/client';

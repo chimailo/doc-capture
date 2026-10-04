@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Lint, types, unit tests, API, size
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm build
+      - run: pnpm typecheck
+      - run: pnpm test
+      # Fails when the public API changed without updating etc/*.api.md.
+      - run: pnpm api:check
+      - run: pnpm size
+
+  opencv:
+    name: OpenCV build (cached)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: cache
+        uses: actions/cache@v4
+        with:
+          path: packages/opencv-build/dist
+          key: opencv-${{ hashFiles('packages/opencv-build/Dockerfile', 'packages/opencv-build/build-inside.sh', 'packages/opencv-build/opencv_js.config.py') }}
+      - if: steps.cache.outputs.cache-hit != 'true'
+        uses: pnpm/action-setup@v4
+      - if: steps.cache.outputs.cache-hit != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - if: steps.cache.outputs.cache-hit != 'true'
+        run: sh packages/opencv-build/scripts/build.sh && node packages/opencv-build/scripts/manifest.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: opencv
+          path: packages/opencv-build/dist
+
+  e2e:
+    name: E2E, CSP and KPI bench
+    needs: [checks, opencv]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with:
+          name: opencv
+          path: packages/opencv-build/dist
+      - run: pnpm build
+      - run: pnpm --filter @doc-capture/demo build
+      - run: pnpm --filter @doc-capture/bench exec playwright install --with-deps chromium
+      - run: pnpm --filter @doc-capture/bench fixtures
+      # Privacy, strict CSP, accessibility, short soak.
+      - run: pnpm --filter @doc-capture/bench e2e
+      # Fails if a KPI misses its target or regresses against baseline.json.
+      - run: pnpm bench
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-report
+          path: |
+            apps/bench/reports
+            apps/bench/test-results

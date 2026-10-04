@@ -32,4 +32,4 @@ Use a real ID-1 card, a passport and an A4 page, with a dark table, a light tabl
 6. Turn on VoiceOver or TalkBack. Guidance must be announced, and the shutter must be reachable and labelled.
 7. Capture 20 times in a row, then check the browser's memory panel (Safari Web Inspector, `chrome://inspect`) for growth.
 
-Record the results in the release checklist (`docs/release-checklist.md`).
+Record the results in the [release checklist](./release-checklist).

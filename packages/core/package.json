@@ -21,12 +21,30 @@
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit && tsc -p test",
-    "api": "api-extractor run --local"
+    "api": "api-extractor run --local",
+    "api:check": "api-extractor run"
   },
   "dependencies": {
     "@doc-capture/ocr-types": "workspace:*"
   },
   "devDependencies": {
     "@techstark/opencv-js": "4.10.0-release.1"
+  },
+  "keywords": [
+    "document",
+    "id",
+    "capture",
+    "ocr",
+    "opencv",
+    "wasm",
+    "camera",
+    "kyc"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": [
+    "../../packages/core/src/index.ts",
+    "../../packages/react/src/index.ts",
+    "../../packages/ocr-types/src/index.ts"
+  ],
+  "tsconfig": "../../packages/react/tsconfig.json",
+  "out": "api",
+  "plugin": [
+    "typedoc-plugin-markdown"
+  ],
+  "readme": "none",
+  "excludeInternal": true,
+  "excludePrivate": true,
+  "hidePageHeader": true,
+  "entryFileName": "index.md",
+  "disableSources": true
+}
