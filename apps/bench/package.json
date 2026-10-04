@@ -1,0 +1,24 @@
+{
+  "name": "@doc-capture/bench",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "fixtures": "tsx src/generate.ts",
+    "bench": "tsx src/run.ts",
+    "soak": "tsx src/soak.ts",
+    "typecheck": "tsc --noEmit",
+    "e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "1.63.0",
+    "@techstark/opencv-js": "4.10.0-release.1",
+    "@types/node": "^22.20.5",
+    "playwright": "^1.63.0",
+    "tsx": "^4.23.15"
+  },
+  "dependencies": {
+    "@doc-capture/core": "workspace:*"
+  }
+}
