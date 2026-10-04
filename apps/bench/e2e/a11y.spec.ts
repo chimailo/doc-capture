@@ -23,10 +23,14 @@ test.describe('accessibility', () => {
     const results = await new AxeBuilder({ page }).analyze();
     expect(results.violations.map((v) => `${v.id}: ${v.help}`)).toEqual([]);
 
-    // Keyboard users can reach the shutter.
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab');
-    const focused = await page.evaluate(() => document.activeElement?.getAttribute('aria-label'));
-    expect(['Take photo', 'Close camera']).toContain(focused);
+    // Keyboard users can reach the shutter once the camera is running.
+    await expect(shutter).toBeEnabled({ timeout: 20_000 });
+    const reached: (string | null)[] = [];
+    for (let i = 0; i < 4; i++) {
+      await page.keyboard.press('Tab');
+      reached.push(await page.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? null));
+    }
+    expect(reached).toContain('Take photo');
+    expect(reached).toContain('Close camera');
   });
 });
