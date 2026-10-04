@@ -94,3 +94,16 @@ describe('measureQuality on synthetic scenes', () => {
     expect(evaluateQuality(m, DEFAULT_THRESHOLDS).issues).toContain('MORE_LIGHT');
   });
 });
+
+describe('glare vs white paper', () => {
+  it('does not report glare for a uniformly white document', async () => {
+    const cv = await loadCv();
+    const quad = rectQuad(120, 110, 400, 252);
+    const image = renderScene(cv, { quad, card: 252, seed: 4 });
+    const m = withScope((scope) => {
+      const det = new ClassicDetector(cv).detectInScope(scope, { image, documentTypes: ['id-card'], previous: null });
+      return measureQuality(cv, scope, det.gray, det.detection?.quad ?? quad, image, { frameDiff: 0, cornerShift: 0 });
+    });
+    expect(evaluateQuality(m, DEFAULT_THRESHOLDS).issues).not.toContain('REDUCE_GLARE');
+  });
+});

@@ -20,6 +20,8 @@ export interface SceneOptions {
   /** Noise std-dev. */
   noise?: number;
   seed?: number;
+  /** Dark band across the top 14% of the card, close to a dark background. */
+  darkHeader?: boolean;
 }
 
 function rng(seed: number) {
@@ -46,6 +48,9 @@ export function renderScene(cv: CV, o: SceneOptions): ImageDataLike {
     cv.rectangle(card, new cv.Point(300, y), new cv.Point(300 + w, y + 14), new cv.Scalar(40, 40, 50, 255), -1);
   }
   cv.rectangle(card, new cv.Point(40, 40), new cv.Point(500, 80), new cv.Scalar(30, 60, 120, 255), -1);
+  if (o.darkHeader) {
+    cv.rectangle(card, new cv.Point(0, 0), new cv.Point(cardW, Math.round(cardH * 0.14)), new cv.Scalar(30, 70, 140, 255), -1);
+  }
 
   const scene = new cv.Mat(height, width, cv.CV_8UC4);
   if (o.background === 'texture') {
@@ -99,3 +104,33 @@ export const rectQuad = (x: number, y: number, w: number, h: number): Quad => [
   { x: x + w, y: y + h },
   { x, y: y + h },
 ];
+
+/**
+ * ID-1 card seen by a pinhole camera (f = 0.8 × frame width): long side spans
+ * `scale` of the width when frontal, rolled and pitched by the given degrees.
+ */
+export function projectedCard(
+  frame: { width: number; height: number },
+  o: { cx?: number; cy?: number; scale?: number; roll?: number; pitch?: number },
+): Quad {
+  const W = frame.width;
+  const f = 0.8 * W;
+  const [u0, v0] = [W / 2, frame.height / 2];
+  const [w, h] = [85.6, 53.98];
+  const z = (f * w) / ((o.scale ?? 0.55) * W);
+  const X = (((o.cx ?? 0.5) * W - u0) * z) / f;
+  const Y = (((o.cy ?? 0.5) * frame.height - v0) * z) / f;
+  const roll = ((o.roll ?? 0) * Math.PI) / 180;
+  const pitch = ((o.pitch ?? 0) * Math.PI) / 180;
+  return [
+    [-w / 2, -h / 2],
+    [w / 2, -h / 2],
+    [w / 2, h / 2],
+    [-w / 2, h / 2],
+  ].map(([x, y]) => {
+    const xr = x! * Math.cos(roll) - y! * Math.sin(roll);
+    const yr = x! * Math.sin(roll) + y! * Math.cos(roll);
+    const Z = z + yr * Math.sin(pitch);
+    return { x: u0 + (f * (X + xr)) / Z, y: v0 + (f * (Y + yr * Math.cos(pitch))) / Z };
+  }) as Quad;
+}

@@ -8,7 +8,8 @@
     "bench": "tsx src/run.ts",
     "soak": "tsx src/soak.ts",
     "typecheck": "tsc --noEmit",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "tune": "tsx src/tune.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",

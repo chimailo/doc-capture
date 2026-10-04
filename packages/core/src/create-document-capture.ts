@@ -429,6 +429,7 @@ class DocumentCaptureImpl implements DocumentCapture {
           roundTripMs: this.clock() - sentAt,
           detected: !!res.detection,
           liveMats: res.liveMats,
+          heapBytes: res.heapBytes,
         });
         this.onResult(res, now, snap, preview);
       })

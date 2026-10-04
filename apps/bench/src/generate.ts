@@ -21,6 +21,7 @@ async function main() {
     const art = documentArt(cv, sc.documentType, 7);
     const rand = rng(42);
     const writer = new Y4mWriter(join(FIXTURE_DIR, `${sc.id}.y4m`), FRAME.width, FRAME.height, FPS);
+    const frames: NonNullable<VideoLabels['frames']> = [];
     const labels: VideoLabels = {
       id: sc.id,
       documentType: sc.documentType,
@@ -29,7 +30,7 @@ async function main() {
       height: FRAME.height,
       expectCapture: sc.expectCapture,
       stillness: sc.stillness ?? false,
-      frames: [],
+      frames,
     };
     let t = 0;
     for (const seg of sc.segments) {
@@ -40,7 +41,7 @@ async function main() {
         writer.write(renderFrame(cv, bg, art, quad, seg.effects ?? {}, rand));
         const inFrame =
           quad && quad.every((p) => p.x >= 0 && p.y >= 0 && p.x < FRAME.width && p.y < FRAME.height);
-        labels.frames.push({ t, quad: inFrame ? quad : null, label: seg.label });
+        frames.push({ t, quad: inFrame ? quad : null, label: seg.label });
         t += 1 / FPS;
       }
     }
@@ -48,7 +49,7 @@ async function main() {
     bg.delete();
     art.delete();
     writeFileSync(join(FIXTURE_DIR, `${sc.id}.json`), JSON.stringify(labels));
-    console.log(`${sc.id.padEnd(20)} ${labels.frames.length} frames  ${((Date.now() - t0) / 1000).toFixed(1)} s`);
+    console.log(`${sc.id.padEnd(20)} ${frames.length} frames  ${((Date.now() - t0) / 1000).toFixed(1)} s`);
   }
 }
 

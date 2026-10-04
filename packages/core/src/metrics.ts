@@ -6,7 +6,14 @@ import type { GuidanceState, QualityScores } from './types';
  */
 export type CaptureMetrics =
   | { type: 'init'; loadMs: number; simd: boolean }
-  | { type: 'frame'; workerMs: number; roundTripMs: number; detected: boolean; liveMats: number }
+  | {
+      type: 'frame';
+      workerMs: number;
+      roundTripMs: number;
+      detected: boolean;
+      liveMats: number;
+      heapBytes: number;
+    }
   | { type: 'guidance'; state: GuidanceState; at: number }
   | {
       type: 'capture';

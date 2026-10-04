@@ -1,13 +1,13 @@
 import type { DocumentType } from '@doc-capture/core';
 
-/** Document pose: centre and size as a share of the frame, rotation and tilt in degrees. */
+/** Document pose: centre and size as a share of the frame; rotation (roll) and tilt (pitch) in degrees. */
 export interface Pose {
   cx: number;
   cy: number;
   /** Width of the document's long side as a share of frame width. */
   scale: number;
   rotation: number;
-  /** Perspective tilt: positive pulls the top edge in. */
+  /** Pitch in degrees: positive tips the top edge away from the camera. */
   tilt: number;
 }
 
@@ -83,8 +83,8 @@ export const SCENARIOS: Scenario[] = [
     background: 'texture',
     expectCapture: true,
     segments: [
-      { duration: 1.5, from: offscreen, to: centred(0.6, { rotation: -6, tilt: 6 }), label: 'moving', effects: { blur: 2 } },
-      { duration: 6, from: centred(0.6, { rotation: -6, tilt: 6 }), label: 'good', effects: { noise: 4, shake: 0.6 } },
+      { duration: 1.5, from: offscreen, to: centred(0.6, { rotation: -6, tilt: 25 }), label: 'moving', effects: { blur: 2 } },
+      { duration: 6, from: centred(0.6, { rotation: -6, tilt: 25 }), label: 'good', effects: { noise: 4, shake: 0.6 } },
     ],
   },
   {

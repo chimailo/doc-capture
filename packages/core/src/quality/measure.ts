@@ -3,6 +3,7 @@ import type { MatScope } from '../opencv/mat-scope';
 import type { CV, Mat } from '../opencv/types';
 import type { Quad, Size } from '../types';
 import type { QualityMeasurements } from './evaluate';
+import { medianOf } from '../detection/preprocess';
 
 /** Size of the normalised document patch used for sharpness, glare and lighting. */
 export const PATCH: Size = { width: 400, height: 252 };
@@ -40,7 +41,16 @@ export function normalisedSharpness(laplacianVar: number, contrast: number): num
   return laplacianVar / Math.max(10, contrast) ** 2;
 }
 
+/** Above this median brightness the page itself is near-white (e.g. paper). */
+const WHITE_PAGE_MEDIAN = 240;
+
+/**
+ * Glare = saturated pixels (≥ 250) on the document. On a near-white page,
+ * glare cannot be told apart from the paper and does not hide anything, so
+ * it is not reported.
+ */
 export function glare(cv: CV, scope: MatScope, patch: Mat) {
+  if (medianOf(patch) >= WHITE_PAGE_MEDIAN) return { overexposedFraction: 0, largestGlareBlob: 0 };
   const bright = scope.track(new cv.Mat());
   cv.threshold(patch, bright, 249, 255, cv.THRESH_BINARY);
   const total = patch.rows * patch.cols;

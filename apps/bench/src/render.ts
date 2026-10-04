@@ -69,24 +69,36 @@ export function background(cv: CV, kind: Scenario['background'], seed = 1) {
   return m;
 }
 
-/** Corner positions of a document with this pose in the frame. */
+/**
+ * Corner positions of a document with this pose, from a pinhole camera with a
+ * typical phone focal length. `scale` sets the distance so the long side spans
+ * that share of the frame width when frontal; `tilt` is pitch in degrees.
+ */
 export function poseQuad(pose: Pose, type: DocumentType): Quad {
   const { width: W, height: H } = FRAME;
-  const aspect = type === 'id-card' ? 85.6 / 53.98 : type === 'passport' ? 125 / 88 : 297 / 210;
-  const long = pose.scale * W;
-  const [w, h] = type === 'a4' ? [long / aspect, long] : [long, long / aspect];
-  const t = (pose.tilt / 100) * w;
-  const local = [
-    [-w / 2 + t, -h / 2],
-    [w / 2 - t, -h / 2],
+  const f = 0.8 * W;
+  const [u0, v0] = [W / 2, H / 2];
+  const [longMm, shortMm] = type === 'id-card' ? [85.6, 53.98] : type === 'passport' ? [125, 88] : [297, 210];
+  const [w, h] = type === 'a4' ? [shortMm, longMm] : [longMm, shortMm];
+  const z = (f * longMm) / (pose.scale * W);
+  const X = ((pose.cx * W - u0) * z) / f;
+  const Y = ((pose.cy * H - v0) * z) / f;
+  const roll = (pose.rotation * Math.PI) / 180;
+  const pitch = (pose.tilt * Math.PI) / 180;
+  return [
+    [-w / 2, -h / 2],
+    [w / 2, -h / 2],
     [w / 2, h / 2],
     [-w / 2, h / 2],
-  ];
-  const a = (pose.rotation * Math.PI) / 180;
-  return local.map(([x, y]) => ({
-    x: pose.cx * W + x! * Math.cos(a) - y! * Math.sin(a),
-    y: pose.cy * H + x! * Math.sin(a) + y! * Math.cos(a),
-  })) as Quad;
+  ].map(([x, y]) => {
+    // Roll in the document plane, then pitch about the horizontal axis.
+    const xr = x! * Math.cos(roll) - y! * Math.sin(roll);
+    const yr = x! * Math.sin(roll) + y! * Math.cos(roll);
+    const yp = yr * Math.cos(pitch);
+    const zp = yr * Math.sin(pitch);
+    const Z = z + zp;
+    return { x: u0 + (f * (X + xr)) / Z, y: v0 + (f * (Y + yp)) / Z };
+  }) as Quad;
 }
 
 export function lerpPose(a: Pose, b: Pose, t: number): Pose {

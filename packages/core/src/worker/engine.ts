@@ -37,7 +37,10 @@ export class Engine {
     this.motion = new MotionTracker(cv);
   }
 
-  process(image: ImageDataLike, params: ProcessParams): Omit<ProcessResult, 'ms' | 'liveMats'> {
+  process(
+    image: ImageDataLike,
+    params: ProcessParams,
+  ): Omit<ProcessResult, 'ms' | 'liveMats' | 'heapBytes'> {
     const frame = { width: image.width, height: image.height };
     return withScope((scope) => {
       const { detection, gray } = this.detector.detectInScope(scope, {

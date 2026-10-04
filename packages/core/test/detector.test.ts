@@ -5,7 +5,7 @@ import { liveMatCount } from '../src/opencv/mat-scope';
 import type { CV } from '../src/opencv/types';
 import type { Quad } from '../src/types';
 import { loadCv } from './helpers/opencv';
-import { rectQuad, renderScene } from './helpers/synth';
+import { projectedCard, rectQuad, renderScene } from './helpers/synth';
 
 let cv: CV;
 beforeAll(async () => {
@@ -72,5 +72,36 @@ describe('ClassicDetector', () => {
     const ms = (performance.now() - t0) / 10;
     // 35 ms is the mid-range phone budget; a dev machine should be well under it.
     expect(ms).toBeLessThan(35);
+  });
+});
+
+describe('ClassicDetector side refinement', () => {
+  it('includes a dark header band that is barely visible against a dark table', async () => {
+    const cv = await loadCv();
+    const quad = rectQuad(150, 61, 350, 220);
+    // Card with a dark band across its top 14%, on a table almost as dark.
+    const image = renderScene(cv, { quad, background: 52, seed: 9, noise: 3, darkHeader: true });
+    const det = new ClassicDetector(cv);
+    let good = 0;
+    for (let seed = 0; seed < 10; seed++) {
+      const img = renderScene(cv, { quad, background: 52, seed, noise: 3, darkHeader: true });
+      const d = det.detect({ image: img, documentTypes: ['id-card'], previous: null });
+      if (d && quadIoU(d.quad, quad) > 0.93) good++;
+    }
+    expect(image.width).toBe(640);
+    expect(good).toBeGreaterThanOrEqual(9);
+  });
+
+  it('finds the header band on a textured background with perspective', async () => {
+    const cv = await loadCv();
+    const quad = projectedCard({ width: 640, height: 480 }, { scale: 0.6, roll: -6, pitch: 25 });
+    const det = new ClassicDetector(cv);
+    let good = 0;
+    for (let seed = 0; seed < 10; seed++) {
+      const img = renderScene(cv, { quad, background: 'texture', seed, noise: 3, darkHeader: true });
+      const d = det.detect({ image: img, documentTypes: ['id-card'], previous: null });
+      if (d && quadIoU(d.quad, quad) > 0.93) good++;
+    }
+    expect(good).toBeGreaterThanOrEqual(8);
   });
 });

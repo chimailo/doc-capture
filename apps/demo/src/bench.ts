@@ -16,6 +16,8 @@ const events: BenchEvent[] = [];
 const t0 = performance.now();
 const log = (type: string, data?: unknown) => events.push({ t: performance.now() - t0, type, data });
 let source: { width: number; height: number } | null = null;
+/** Per-frame numbers, kept out of the event list to keep it small. */
+const frames = { count: 0, workerMs: [] as number[], maxLiveMats: 0, heapBytes: [] as number[] };
 
 const capture = createDocumentCapture({
   container: document.getElementById('capture')!,
@@ -25,7 +27,12 @@ const capture = createDocumentCapture({
   thresholds: params.get('thresholds') ? JSON.parse(params.get('thresholds')!) : undefined,
   onMetrics: (m) => {
     if (m.type === 'capture') source = { width: m.sourceWidth, height: m.sourceHeight };
-    if (m.type !== 'frame') log('metric', m);
+    if (m.type === 'frame') {
+      frames.count++;
+      frames.workerMs.push(m.workerMs);
+      frames.maxLiveMats = Math.max(frames.maxLiveMats, m.liveMats);
+      if (frames.count % 50 === 1) frames.heapBytes.push(m.heapBytes);
+    } else log('metric', m);
   },
 });
 
@@ -48,6 +55,7 @@ declare global {
   interface Window {
     __bench: {
       events: BenchEvent[];
+      frames: typeof frames;
       status: () => string;
       captureNow: () => Promise<unknown>;
       destroy: () => Promise<void>;
@@ -57,6 +65,7 @@ declare global {
 
 window.__bench = {
   events,
+  frames,
   status: () => capture.status,
   captureNow: () => capture.captureNow(),
   destroy: () => capture.destroy(),

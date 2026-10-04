@@ -1,4 +1,4 @@
-import { quadIoU } from '../geometry';
+import { meanCornerShift, quadIoU } from '../geometry';
 import type { Quad } from '../types';
 import { Kalman1D } from './kalman';
 
@@ -11,6 +11,11 @@ export interface QuadTrackerOptions {
   resetIoU?: number;
   processNoise?: number;
   measurementNoise?: number;
+  /**
+   * A measurement whose corners move more than this (px, mean) is an outlier
+   * until it repeats on the next detection. Default 10.
+   */
+  outlierPx?: number;
 }
 
 /**
@@ -23,6 +28,7 @@ export class QuadTracker {
   private misses = 0;
   private visible = false;
   private current: Quad | null = null;
+  private pendingOutlier: Quad | null = null;
   private readonly opts: Required<QuadTrackerOptions>;
 
   constructor(options: QuadTrackerOptions = {}) {
@@ -32,6 +38,7 @@ export class QuadTracker {
       resetIoU: 0.4,
       processNoise: 1e-9,
       measurementNoise: 4,
+      outlierPx: 10,
       ...options,
     };
     this.filters = this.makeFilters();
@@ -64,6 +71,19 @@ export class QuadTracker {
       }
       return this.quad;
     }
+
+    if (this.current && this.visible && meanCornerShift(this.current, measured) > this.opts.outlierPx) {
+      // A one-frame jump is usually the detector picking a different edge.
+      // Only follow it if the next detection agrees.
+      const confirmed =
+        this.pendingOutlier !== null && meanCornerShift(this.pendingOutlier, measured) <= this.opts.outlierPx;
+      if (!confirmed) {
+        this.pendingOutlier = measured;
+        this.misses = 0;
+        return this.quad;
+      }
+    }
+    this.pendingOutlier = null;
 
     if (this.current && quadIoU(this.current, measured) < this.opts.resetIoU) {
       // The document jumped (or a different one appeared): start over.
@@ -100,6 +120,7 @@ export class QuadTracker {
   }
 
   reset() {
+    this.pendingOutlier = null;
     this.filters = this.makeFilters();
     this.hits = 0;
     this.misses = 0;

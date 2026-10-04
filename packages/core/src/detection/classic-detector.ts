@@ -6,6 +6,7 @@ import type { Detection, Quad, Size } from '../types';
 import { contourQuads } from './contours';
 import type { Detector, DetectorInput } from './detector';
 import { houghQuad } from './hough';
+import { refineByAspect } from './refine';
 import { LOW_CONTRAST_THRESHOLDS, autoThresholds, edgeMap, preprocess } from './preprocess';
 import { edgeSupport, scoreCandidate } from './scoring';
 
@@ -54,8 +55,22 @@ export class ClassicDetector implements Detector {
     const frame: Size = { width: input.image.width, height: input.image.height };
     const frameArea = frame.width * frame.height;
 
-    const pick = (edges: Mat, quads: Quad[], strategy: Detection['strategy']) => {
+    const grayView = { data: blurred.data as Uint8Array, cols: blurred.cols, rows: blurred.rows };
+    /** Adds aspect-refined variants (e.g. a missed dark header band) to the candidates. */
+    const withRefined = (quads: Quad[]) => {
+      const out = [...quads];
+      for (const q of quads) {
+        for (const type of input.documentTypes) {
+          const r = refineByAspect(grayView, q, type);
+          if (r) out.push(r);
+        }
+      }
+      return out;
+    };
+
+    const pick = (edges: Mat, found: Quad[], strategy: Detection['strategy']) => {
       const view = { data: edges.data as Uint8Array, cols: edges.cols, rows: edges.rows };
+      const quads = withRefined(found);
       let best: Detection | null = null;
       for (const quad of quads) {
         const s = scoreCandidate(

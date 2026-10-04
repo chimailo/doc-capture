@@ -77,7 +77,32 @@ describe('QuadTracker', () => {
     const t = new QuadTracker({ showAfter: 1 });
     for (let i = 0; i < 10; i++) t.update(q, i * 66);
     const moved = rectQuad(400, 300, 100, 60);
-    const out = t.update(moved, 700)!;
+    t.update(moved, 700); // unconfirmed: still shows the old outline
+    const out = t.update(moved, 766)!;
     expect(out[0]!.x).toBeCloseTo(400);
+  });
+});
+
+describe('QuadTracker outlier gating', () => {
+  const full = rectQuad(150, 61, 350, 220);
+  const partial = rectQuad(150, 92, 350, 189);
+
+  it('ignores a detector that flips to another edge for single frames', () => {
+    const t = new QuadTracker({ showAfter: 1 });
+    let maxDev = 0;
+    for (let i = 0; i < 60; i++) {
+      const out = t.update(i % 3 === 2 ? partial : full, i * 80)!;
+      if (i > 3) maxDev = Math.max(maxDev, Math.abs(out[0]!.y - 61));
+    }
+    expect(maxDev).toBeLessThan(1);
+  });
+
+  it('follows a jump confirmed by two detections in a row', () => {
+    const t = new QuadTracker({ showAfter: 1 });
+    for (let i = 0; i < 10; i++) t.update(full, i * 80);
+    const moved = rectQuad(200, 61, 350, 220);
+    t.update(moved, 800);
+    const out = t.update(moved, 880)!;
+    expect(out[0]!.x).toBeGreaterThan(190);
   });
 });

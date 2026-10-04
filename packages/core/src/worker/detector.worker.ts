@@ -10,6 +10,7 @@ import type { FinalizeResult, FramePayload, FromWorker, InitResult, ToWorker } f
 declare const self: DedicatedWorkerGlobalScope;
 
 let engine: Engine | null = null;
+let heap: () => number = () => 0;
 let readCanvas: OffscreenCanvas | null = null;
 
 /** Turns a transferred frame into RGBA pixels and releases the source. */
@@ -40,6 +41,7 @@ async function handle(msg: ToWorker): Promise<void> {
       const t0 = performance.now();
       const cv = await loadOpenCv(msg.opencv);
       engine = new Engine(cv);
+      heap = () => (cv as unknown as { HEAP8?: Int8Array }).HEAP8?.length ?? 0;
       const result: InitResult = {
         simd: msg.opencv.variant !== 'stock' && (msg.opencv.simd ?? supportsWasmSimd()),
         offscreenCanvas: typeof OffscreenCanvas !== 'undefined',
@@ -53,7 +55,7 @@ async function handle(msg: ToWorker): Promise<void> {
       const img = toPixels(msg.frame);
       const out = engine.process(img, msg.params);
       wipe(img);
-      const result = { ...out, ms: performance.now() - t0, liveMats: liveMatCount() };
+      const result = { ...out, ms: performance.now() - t0, liveMats: liveMatCount(), heapBytes: heap() };
       return reply({ type: 'result', id: msg.id, result });
     }
     case 'finalize': {

@@ -62,6 +62,8 @@ export interface ProcessResult {
   ms: number;
   /** OpenCV objects still allocated after this frame (should stay 0). */
   liveMats: number;
+  /** Size of the WASM heap in bytes. */
+  heapBytes: number;
 }
 
 export type FinalizeResult =

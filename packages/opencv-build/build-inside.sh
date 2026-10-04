@@ -2,21 +2,26 @@
 # Runs inside the emsdk container. Builds a SIMD and a non-SIMD variant.
 set -eu
 
-COMMON="--build_wasm --disable_single_file \
-  --config /work/opencv_js.config.py \
-  --cmake_option=-DBUILD_LIST=core,imgproc,js \
-  --cmake_option=-DCV_ENABLE_INTRINSICS=ON \
-  --cmake_option=-DWITH_ITT=OFF \
-  --cmake_option=-DBUILD_opencv_dnn=OFF \
-  --cmake_option=-DBUILD_opencv_features2d=OFF \
-  --cmake_option=-DBUILD_opencv_photo=OFF \
-  --cmake_option=-DBUILD_opencv_video=OFF \
-  --cmake_option=-DBUILD_opencv_calib3d=OFF \
-  --cmake_option=-DBUILD_opencv_objdetect=OFF \
-  --build_flags=-Os -s MODULARIZE=1 -s EXPORT_NAME=cv -s ALLOW_MEMORY_GROWTH=1 -s ENVIRONMENT=web,worker -s FILESYSTEM=0 -s DYNAMIC_EXECUTION=0"
+# Emscripten link flags. DYNAMIC_EXECUTION=0 removes eval/new Function so the
+# output runs under a strict CSP with only 'wasm-unsafe-eval'.
+# The trailing space matters: build_js.py appends its own flags directly after
+# these with no separator.
+FLAGS="-Os -s ALLOW_MEMORY_GROWTH=1 -s FILESYSTEM=0 -s DYNAMIC_EXECUTION=0 -s ENVIRONMENT=web,worker "
 
-python3 /opencv/platforms/js/build_js.py /out/build_simd $COMMON --simd
-python3 /opencv/platforms/js/build_js.py /out/build_nosimd $COMMON
+build() {
+  dir=$1
+  shift
+  python3 /opencv/platforms/js/build_js.py "$dir" \
+    --build_wasm --disable_single_file \
+    --config /work/opencv_js.config.py \
+    --cmake_option=-DBUILD_LIST=core,imgproc,js \
+    --cmake_option=-DWITH_ITT=OFF \
+    --build_flags="$FLAGS" \
+    "$@"
+}
+
+build /out/build_simd --simd
+build /out/build_nosimd
 
 mkdir -p /out/dist
 cp /out/build_simd/bin/opencv.js /out/dist/opencv-simd.js

@@ -1,4 +1,5 @@
 import type { Quad } from '@doc-capture/core';
+import { denseFrames } from './labels';
 import type { VideoLabels } from './labels';
 
 /** Event recorded by apps/demo/bench.html (`window.__bench.events`). */
@@ -44,6 +45,21 @@ export interface Report {
   runs: RunResult[];
   kpis: Targets;
   pass: Record<keyof Targets, boolean>;
+}
+
+/** Per-frame detection time in the worker, across all runs. */
+export interface Latency {
+  frames: number;
+  p50: number;
+  p95: number;
+}
+
+export const LATENCY_BUDGET_MS = 35;
+
+export function latency(samples: number[]): Latency {
+  const s = [...samples].sort((a, b) => a - b);
+  const q = (p: number) => (s.length ? s[Math.min(s.length - 1, Math.floor(p * s.length))]! : NaN);
+  return { frames: s.length, p50: q(0.5), p95: q(0.95) };
 }
 
 const area = (q: readonly { x: number; y: number }[]) => {
@@ -99,7 +115,8 @@ export const SUCCESS_WINDOW_MS = 15_000;
 /** How far either side of the estimated video time to look for the matching label. */
 const ALIGN_WINDOW_S = 0.35;
 
-export function scoreRun(labels: VideoLabels, events: BenchEvent[]): RunResult {
+export function scoreRun(video: VideoLabels, events: BenchEvent[]): RunResult {
+  const labels = { ...video, frames: denseFrames(video) };
   const duration = labels.frames.length / labels.fps;
   const playing = events.find((e) => e.type === 'playing')?.t ?? 0;
   const videoTime = (t: number) => ((t - playing) / 1000) % duration;
@@ -199,15 +216,23 @@ export function summarise(runs: RunResult[], targets: Targets = TARGETS): Report
   };
 }
 
+/** How much worse than the baseline a KPI may get before CI fails (absolute). */
+export const REGRESSION_TOLERANCE: Targets = {
+  successRate: 0.05,
+  medianTimeToCaptureMs: 500,
+  falseCaptureRate: 0.01,
+  jitterRmsPx: 0.3,
+  flickerRate: 0.005,
+};
+
 /** KPIs that got worse than the stored baseline by more than the tolerance. */
-export function regressions(current: Targets, baseline: Targets, tolerance = 0.1): string[] {
+export function regressions(current: Targets, baseline: Targets, tolerance: Targets = REGRESSION_TOLERANCE): string[] {
   const out: string[] = [];
-  const higherIsBetter: (keyof Targets)[] = ['successRate'];
   for (const k of Object.keys(baseline) as (keyof Targets)[]) {
     const b = baseline[k];
     const c = current[k];
     if (!Number.isFinite(b) || !Number.isFinite(c)) continue;
-    const worse = higherIsBetter.includes(k) ? c < b - tolerance * Math.abs(b) : c > b + tolerance * Math.abs(b) + 1e-9;
+    const worse = k === 'successRate' ? c < b - tolerance[k] : c > b + tolerance[k];
     if (worse) out.push(`${k}: ${c.toFixed(3)} vs baseline ${b.toFixed(3)}`);
   }
   return out;

@@ -1,5 +1,5 @@
 import { DOCUMENT_SPECS } from '../document-types';
-import { area, aspectRatio, maxAngleDeviation, quadIoU } from '../geometry';
+import { area, aspectRatio, maxAngleDeviation, metricAspectRatio, quadIoU } from '../geometry';
 import type { DocumentType, Quad, Size } from '../types';
 
 export interface ScoreWeights {
@@ -58,12 +58,15 @@ export function edgeSupport(edges: { data: Uint8Array; cols: number; rows: numbe
 export function aspectMatch(
   q: Quad,
   types: readonly DocumentType[],
+  frame: Size,
 ): { type: DocumentType; score: number } {
-  const ar = aspectRatio(q);
+  // The metric ratio undoes perspective but depends on an estimated focal
+  // length; the plain ratio is exact for frontal views. Use the better match.
+  const ratios = [aspectRatio(q), metricAspectRatio(q, frame)];
   let best = { type: types[0] ?? 'id-card', score: -1 };
   for (const type of types) {
     const spec = DOCUMENT_SPECS[type];
-    const relErr = Math.abs(ar - spec.aspectRatio) / spec.aspectRatio;
+    const relErr = Math.min(...ratios.map((r) => Math.abs(r - spec.aspectRatio) / spec.aspectRatio));
     const score = Math.max(0, 1 - relErr / (spec.aspectTolerance * 2));
     if (score > best.score) best = { type, score };
   }
@@ -82,7 +85,7 @@ export function scoreCandidate(
   if (fill < 0.04 || fill > 0.98) return null;
   const angleDev = maxAngleDeviation(q);
   if (angleDev > 35) return null;
-  const aspect = aspectMatch(q, types);
+  const aspect = aspectMatch(q, types, frame);
   if (aspect.score <= 0) return null;
 
   const parts = {

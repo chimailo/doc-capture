@@ -151,3 +151,55 @@ export function minEdgeMargin(q: Quad, frame: Size): number {
     ...q.map((p) => Math.min(p.x, p.y, frame.width - 1 - p.x, frame.height - 1 - p.y)),
   );
 }
+
+type Vec3 = [number, number, number];
+const cross3 = (a: Vec3, b: Vec3): Vec3 => [
+  a[1] * b[2] - a[2] * b[1],
+  a[2] * b[0] - a[0] * b[2],
+  a[0] * b[1] - a[1] * b[0],
+];
+const dot3 = (a: Vec3, b: Vec3) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+
+/**
+ * Aspect ratio (long ÷ short) of the real rectangle behind a perspective
+ * quad, assuming square pixels and the principal point at the frame centre
+ * (Zhang & He, "Whiteboard scanning and image enhancement", 2007). When the
+ * focal length cannot be estimated from the quad, a typical phone-camera
+ * focal length is assumed.
+ */
+export function metricAspectRatio(q: Quad, frame: Size): number {
+  const u0 = frame.width / 2;
+  const v0 = frame.height / 2;
+  // Paper's corner order: m1 TL, m2 TR, m3 BL, m4 BR.
+  const m1: Vec3 = [q[0].x, q[0].y, 1];
+  const m2: Vec3 = [q[1].x, q[1].y, 1];
+  const m3: Vec3 = [q[3].x, q[3].y, 1];
+  const m4: Vec3 = [q[2].x, q[2].y, 1];
+  const k2 = dot3(cross3(m1, m4), m3) / dot3(cross3(m2, m4), m3);
+  const k3 = dot3(cross3(m1, m4), m2) / dot3(cross3(m3, m4), m2);
+  const n2: Vec3 = [k2 * m2[0] - m1[0], k2 * m2[1] - m1[1], k2 - 1];
+  const n3: Vec3 = [k3 * m3[0] - m1[0], k3 * m3[1] - m1[1], k3 - 1];
+
+  if (!Number.isFinite(k2) || !Number.isFinite(k3)) return aspectRatio(q);
+  const diag = Math.hypot(frame.width, frame.height);
+  // Typical phone camera (≈65° horizontal field of view), used when the focal
+  // length cannot be estimated: rotation about a single axis leaves one pair
+  // of sides parallel, and a fronto-parallel view has no perspective at all.
+  const fPrior = 0.8 * Math.max(frame.width, frame.height);
+  const denom = n2[2] * n3[2];
+  let f2 =
+    Math.abs(denom) < 1e-9
+      ? NaN
+      : -(
+          n2[0] * n3[0] -
+          (n2[0] * n3[2] + n2[2] * n3[0]) * u0 +
+          n2[2] * n3[2] * u0 * u0 +
+          (n2[1] * n3[1] - (n2[1] * n3[2] + n2[2] * n3[1]) * v0 + n2[2] * n3[2] * v0 * v0)
+        ) / denom;
+  if (!(f2 > (0.3 * diag) ** 2 && f2 < (5 * diag) ** 2)) f2 = fPrior * fPrior;
+  // |A⁻¹ n|² with A = [[f,0,u0],[0,f,v0],[0,0,1]].
+  const norm = (n: Vec3) => ((n[0] - u0 * n[2]) ** 2 + (n[1] - v0 * n[2]) ** 2) / f2 + n[2] ** 2;
+  const r = Math.sqrt(norm(n2) / norm(n3));
+  if (!Number.isFinite(r) || r <= 0) return aspectRatio(q);
+  return r >= 1 ? r : 1 / r;
+}

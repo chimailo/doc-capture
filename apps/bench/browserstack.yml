@@ -1,0 +1,24 @@
+# BrowserStack Automate config for e2e/device-smoke.spec.ts.
+# Credentials come from BROWSERSTACK_USERNAME / BROWSERSTACK_ACCESS_KEY.
+# See docs/device-testing.md.
+projectName: doc-capture
+buildName: device-smoke
+framework: playwright
+browserstackLocal: false
+platforms:
+  - deviceName: Samsung Galaxy A51
+    osVersion: '10.0'
+    browserName: chrome
+  - deviceName: Google Pixel 7
+    osVersion: '13.0'
+    browserName: chrome
+  - deviceName: iPhone 11
+    osVersion: '16'
+    browserName: safari
+  - deviceName: iPhone 13
+    osVersion: '15'
+    browserName: safari
+  - deviceName: iPhone 15
+    osVersion: '17'
+    browserName: safari
+parallelsPerPlatform: 1
