@@ -42,14 +42,14 @@ export interface OverlayState {
  */
 export class Overlay {
   private raf = 0;
-  private ctx: CanvasRenderingContext2D;
+  private ctx: CanvasRenderingContext2D | null;
 
   constructor(
     private canvas: HTMLCanvasElement,
     private getState: (now: number) => OverlayState,
     private theme: OverlayTheme = DEFAULT_THEME,
   ) {
-    this.ctx = canvas.getContext('2d')!;
+    this.ctx = canvas.getContext('2d');
   }
 
   start(): void {
@@ -66,7 +66,7 @@ export class Overlay {
     this.clear();
   }
 
-  private fitCanvas(): Size {
+  private fitCanvas(ctx: CanvasRenderingContext2D): Size {
     const dpr = window.devicePixelRatio || 1;
     const rect = this.canvas.getBoundingClientRect();
     const w = Math.round(rect.width * dpr);
@@ -75,13 +75,14 @@ export class Overlay {
       this.canvas.width = w;
       this.canvas.height = h;
     }
-    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     return { width: rect.width, height: rect.height };
   }
 
   draw(now: number): void {
-    const view = this.fitCanvas();
     const ctx = this.ctx;
+    if (!ctx) return;
+    const view = this.fitCanvas(ctx);
     ctx.clearRect(0, 0, view.width, view.height);
     const { quad, frame, ready } = this.getState(now);
     if (!quad || !frame.width) return;
@@ -118,7 +119,7 @@ export class Overlay {
   }
 
   clear(): void {
-    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this.ctx?.setTransform(1, 0, 0, 1, 0, 0);
+    this.ctx?.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }
 }

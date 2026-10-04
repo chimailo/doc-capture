@@ -99,7 +99,7 @@ export async function loadOpenCv(config: OpenCvConfig): Promise<CV> {
   try {
     scope.importScripts(jsUrl);
   } catch (e) {
-    throw new WasmLoadFailed(`Could not run ${jsUrl}.`, e);
+    throw new WasmLoadFailed(`Could not run ${jsUrl}: ${e instanceof Error ? e.message : e}`, e);
   }
   const exported = scope.cv;
   if (!exported) throw new WasmLoadFailed(`${jsUrl} did not define cv.`);
@@ -112,6 +112,6 @@ export async function loadOpenCv(config: OpenCvConfig): Promise<CV> {
     }
     return await settle(exported as EmscriptenModule);
   } catch (e) {
-    throw new WasmLoadFailed('OpenCV failed to initialise.', e);
+    throw new WasmLoadFailed(`OpenCV failed to initialise: ${e instanceof Error ? e.message : e}`, e);
   }
 }

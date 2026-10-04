@@ -55,9 +55,13 @@ export type ToWorker =
 export interface ProcessResult {
   detection: Detection | null;
   quality: QualityReport | null;
+  /** Raw normalised sharpness, for choosing the best frame. */
+  sharpness: number | null;
   frame: Size;
   /** Worker-side processing time in ms. */
   ms: number;
+  /** OpenCV objects still allocated after this frame (should stay 0). */
+  liveMats: number;
 }
 
 export type FinalizeResult =

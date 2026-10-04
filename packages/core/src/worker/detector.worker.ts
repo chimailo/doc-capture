@@ -3,6 +3,7 @@ import type { ImageDataLike } from '../detection/detector';
 import { DocumentCaptureError } from '../errors';
 import { encodePixels } from '../output/encode';
 import { loadOpenCv, supportsWasmSimd } from '../opencv/loader';
+import { liveMatCount } from '../opencv/mat-scope';
 import { Engine } from './engine';
 import type { FinalizeResult, FramePayload, FromWorker, InitResult, ToWorker } from './protocol';
 
@@ -52,7 +53,8 @@ async function handle(msg: ToWorker): Promise<void> {
       const img = toPixels(msg.frame);
       const out = engine.process(img, msg.params);
       wipe(img);
-      return reply({ type: 'result', id: msg.id, result: { ...out, ms: performance.now() - t0 } });
+      const result = { ...out, ms: performance.now() - t0, liveMats: liveMatCount() };
+      return reply({ type: 'result', id: msg.id, result });
     }
     case 'finalize': {
       if (!engine) throw new DocumentCaptureError('INTERNAL', 'Worker not initialised.');

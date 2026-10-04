@@ -37,3 +37,17 @@ export type { Detector, DetectorInput, ImageDataLike } from './detection/detecto
 export type { IntegrityMap, OpenCvConfig } from './opencv/loader';
 export { DEFAULT_THEME as DEFAULT_OVERLAY_THEME } from './overlay/overlay';
 export type { OverlayTheme } from './overlay/overlay';
+export { createDocumentCapture, prewarm } from './create-document-capture';
+export type {
+  CaptureStatus,
+  DetectionEvent,
+  DocumentCapture,
+  DocumentCaptureEvents,
+  DocumentCaptureOptions,
+} from './create-document-capture';
+export type { CameraOptions } from './camera/camera';
+export type { EnhanceOptions } from './worker/protocol';
+export type { CaptureMetrics } from './metrics';
+export { BUILT_IN_LOCALES, resolveMessages } from './guidance/messages';
+export type { GuidanceMessages } from './guidance/messages';
+export { coverTransform } from './overlay/overlay';

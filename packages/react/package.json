@@ -1,0 +1,38 @@
+{
+  "name": "@doc-capture/react",
+  "version": "0.0.0",
+  "description": "React bindings for @doc-capture/core: <DocumentCapture/> and useDocumentCapture().",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean --sourcemap --external react",
+    "typecheck": "tsc --noEmit",
+    "api": "api-extractor run --local"
+  },
+  "dependencies": {
+    "@doc-capture/core": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  }
+}

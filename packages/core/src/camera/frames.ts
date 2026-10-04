@@ -102,7 +102,8 @@ export class FrameGrabber {
     return { kind: 'pixels', data: img.data, width: vw, height: vh };
   }
 
-  private fromBitmap(bitmap: ImageBitmap): FramePayload {
+  /** Wraps a bitmap as a payload, converting to pixels if the worker needs them. */
+  fromBitmap(bitmap: ImageBitmap): FramePayload {
     if (this.useBitmaps) return { kind: 'bitmap', bitmap, width: bitmap.width, height: bitmap.height };
     const c = makeCanvas(bitmap.width, bitmap.height);
     const ctx = c.getContext('2d') as Ctx2D;

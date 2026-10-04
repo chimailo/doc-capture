@@ -37,7 +37,7 @@ export class Engine {
     this.motion = new MotionTracker(cv);
   }
 
-  process(image: ImageDataLike, params: ProcessParams): Omit<ProcessResult, 'ms'> {
+  process(image: ImageDataLike, params: ProcessParams): Omit<ProcessResult, 'ms' | 'liveMats'> {
     const frame = { width: image.width, height: image.height };
     return withScope((scope) => {
       const { detection, gray } = this.detector.detectInScope(scope, {
@@ -47,12 +47,17 @@ export class Engine {
       });
       const frameDiff = this.motion.frameDiff(scope, gray);
       const cornerShift = this.motion.cornerShift(detection?.quad ?? null, frame);
-      if (!detection) return { detection: null, quality: null, frame };
+      if (!detection) return { detection: null, quality: null, sharpness: null, frame };
       const m = measureQuality(this.cv, scope, gray, detection.quad, frame, {
         frameDiff,
         cornerShift,
       });
-      return { detection, quality: evaluateQuality(m, params.thresholds), frame };
+      return {
+        detection,
+        quality: evaluateQuality(m, params.thresholds),
+        sharpness: m.sharpness,
+        frame,
+      };
     });
   }
 

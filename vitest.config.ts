@@ -26,6 +26,15 @@ export default defineConfig({
       {
         extends: true,
         test: {
+          name: 'demo',
+          root: 'apps/demo',
+          environment: 'node',
+          include: ['test/**/*.test.ts'],
+        },
+      },
+      {
+        extends: true,
+        test: {
           name: 'bench',
           root: 'apps/bench',
           environment: 'node',
