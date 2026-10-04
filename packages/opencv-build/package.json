@@ -1,0 +1,23 @@
+{
+  "name": "@doc-capture/opencv-build",
+  "version": "0.0.0",
+  "description": "Custom OpenCV.js build (core + imgproc only) with SIMD and non-SIMD WASM, used by @doc-capture/core.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    "./manifest.json": "./dist/manifest.json",
+    "./*": "./dist/*"
+  },
+  "scripts": {
+    "build": "sh scripts/build.sh && node scripts/manifest.mjs",
+    "build:stock": "node scripts/stock.mjs && node scripts/manifest.mjs",
+    "manifest": "node scripts/manifest.mjs",
+    "copy-to": "node scripts/copy-to.mjs"
+  },
+  "devDependencies": {
+    "@techstark/opencv-js": "4.10.0-release.1"
+  }
+}

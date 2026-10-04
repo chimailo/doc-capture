@@ -1,0 +1,32 @@
+{
+  "name": "@doc-capture/core",
+  "version": "0.0.0",
+  "description": "On-device document and ID capture for the web: detection, guidance, auto-capture and perspective correction with OpenCV in a Web Worker.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./worker.js": "./dist/worker.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "api": "api-extractor run --local"
+  },
+  "dependencies": {
+    "@doc-capture/ocr-types": "workspace:*"
+  },
+  "devDependencies": {
+    "@techstark/opencv-js": "4.10.0-release.1"
+  }
+}

@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+temp/
+*.log
+.DS_Store
+apps/bench/dataset/videos/
+apps/bench/fixtures/out/
+apps/bench/reports/
+apps/demo/public/opencv/
+packages/opencv-build/build/
+test-results/
+playwright-report/
+apps/docs/.vitepress/cache/
+apps/docs/.vitepress/dist/
+apps/docs/api/
