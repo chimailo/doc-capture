@@ -20,7 +20,7 @@
   ],
   "scripts": {
     "build": "tsup",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc -p test",
     "api": "api-extractor run --local"
   },
   "dependencies": {
